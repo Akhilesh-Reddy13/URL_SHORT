@@ -9,6 +9,7 @@ router.get('/:shortUrl',async (req,res)=>{
     const shortUrl=req.params.shortUrl;
     const lgUrl= await Url.findOne({shortUrl})
     if(lgUrl){
+        await Url.updateOne({shortUrl},{$inc:{clicks:1}});
         return res.redirect(lgUrl.longUrl);
     }
     else{
