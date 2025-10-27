@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import Url from "../models/Url.js";
 import bcrypt from 'bcrypt';
 import User from "../models/User.js";
+import short from "../Algo/shorting.js";
 import dotenv from "dotenv";
 import { authenticateToken } from "../middleware/auth.js";
 
@@ -79,7 +80,9 @@ router.post('/create',authenticateToken, async (req,res)=>{
     if(!url || typeof(url)!=='string'){
         return res.status(400).json({error:"Invalid or missing longUrl"});
     }
-    const stUrl=shortid.generate();
+    const stUrl=short();
+    console.log("Short url :",stUrl);
+    console.log("Long url :",url);
     const newUrl=new Url({shortUrl:stUrl,longUrl:url,owner:user});
     await newUrl.save();
     res.status(201).send({shortUrl:stUrl,url});
