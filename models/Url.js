@@ -6,7 +6,9 @@ const urlSchema=new mongoose.Schema({
     longUrl: {type:String,required:true},
     clicks: {type:Number,default:0},
     createdAt: {type:Date, default: Date.now},
-    owner:{type:String,required:true}
+    owner: {type:String,required:true},
+    lastAccessed: [{type:Date}],
+    expiresIn: {type:Number,default:null}
 })
 
 const urlShort=mongoose.model('Url',urlSchema);

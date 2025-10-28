@@ -54,9 +54,9 @@ router.post('/users/login',async(req,res)=>{
 router.get('/:shortUrl',async (req,res)=>{
     try{
     const shortUrl=req.params.shortUrl;
-    const lgUrl= await Url.findOne({shortUrl})
+    const lgUrl= await Url.findOne({shortUrl});
     if(lgUrl){
-        await Url.updateOne({shortUrl},{$inc:{clicks:1}});
+        await Url.updateMany({shortUrl},{$inc:{clicks:1},$set:{lastAccessed:new Date}});
         return res.redirect(lgUrl.longUrl);
     }
     else{
@@ -81,9 +81,7 @@ router.post('/create',authenticateToken, async (req,res)=>{
         return res.status(400).json({error:"Invalid or missing longUrl"});
     }
     const stUrl=short();
-    console.log("Short url :",stUrl);
-    console.log("Long url :",url);
-    const newUrl=new Url({shortUrl:stUrl,longUrl:url,owner:user});
+    const newUrl=new Url({shortUrl:stUrl,longUrl:url,owner:user,expiresIn:60});
     await newUrl.save();
     res.status(201).send({shortUrl:stUrl,url});
     console.log("Created a newShortURL");
