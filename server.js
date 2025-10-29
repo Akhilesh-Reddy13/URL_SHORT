@@ -3,13 +3,16 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import router from './routes/Routes.js'
 import { error } from 'console';
+import limiter from "./Algo/rateLimiter.js";
 
 dotenv.config();
+
 const app=express();
 const PORT=5000;
 
 
 app.use(express.json());
+app.use(limiter());
 app.use('/',router);
 
 app.get('/',(req,res)=>{
