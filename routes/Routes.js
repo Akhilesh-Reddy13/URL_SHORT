@@ -7,6 +7,7 @@ import User from "../models/User.js";
 import short from "../Algo/shorting.js";
 import dotenv from "dotenv";
 import { authenticateToken } from "../middleware/auth.js";
+import validator from "validator";
 
 const router=express.Router();
 
@@ -77,7 +78,7 @@ router.post('/create',authenticateToken, async (req,res)=>{
         return res.status(404).json({message:"User not found"});
     }
     const { url }=req.body;
-    if(!url || typeof(url)!=='string'){
+    if(!url || !validator.isURL(url,{require_protocol:true})){
         return res.status(400).json({error:"Invalid or missing longUrl"});
     }
     const stUrl=short();
