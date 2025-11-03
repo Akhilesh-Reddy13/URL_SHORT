@@ -1,11 +1,11 @@
-import express, { application } from "express";
-import shortid from "shortid";
+import express from "express";
 import jwt from "jsonwebtoken";
 import Url from "../models/Url.js";
 import bcrypt from 'bcrypt';
 import User from "../models/User.js";
 import short from "../Algo/shorting.js";
 import dotenv from "dotenv";
+import {UAParser} from "ua-parser-js";
 import { authenticateToken } from "../middleware/auth.js";
 import validator from "validator";
 
@@ -57,7 +57,9 @@ router.get('/:shortUrl',async (req,res)=>{
     const shortUrl=req.params.shortUrl;
     const lgUrl= await Url.findOne({shortUrl});
     if(lgUrl){
-        await Url.updateMany({shortUrl},{$inc:{clicks:1},$set:{lastAccessed:new Date}});
+        let parser = new UAParser(req.headers['user-agent']);
+        let ua=parser.getResult();
+        await Url.updateMany({shortUrl},{$inc:{clicks:1},$set:{lastAccessed:new Date},$push:{browsers:ua.browser.name}});
         return res.redirect(lgUrl.longUrl);
     }
     else{

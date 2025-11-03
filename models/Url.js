@@ -8,7 +8,8 @@ const urlSchema=new mongoose.Schema({
     createdAt: {type:Date, default: Date.now},
     owner: {type:String,required:true},
     lastAccessed: [{type:Date}],
-    expiresIn: {type:Date,required:true,index:{expires:0}}
+    expiresIn: {type:Date,required:true,index:{expires:0}},
+    browsers:[{type:String}]
 })
 
 const urlShort=mongoose.model('Url',urlSchema);

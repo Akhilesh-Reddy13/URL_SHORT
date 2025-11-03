@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.0",
     "shortid": "^2.2.17",
+    "ua-parser-js": "^2.0.6",
     "validator": "^13.15.20"
   },
   "devDependencies": {
