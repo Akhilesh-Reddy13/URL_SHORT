@@ -1,4 +1,4 @@
-import express from "express";
+import express, { application } from "express";
 import shortid from "shortid";
 import jwt from "jsonwebtoken";
 import Url from "../models/Url.js";
@@ -77,12 +77,19 @@ router.post('/create',authenticateToken, async (req,res)=>{
     if(!user){
         return res.status(404).json({message:"User not found"});
     }
-    const { url }=req.body;
+    const { url,expiresAt }=req.body;
     if(!url || !validator.isURL(url,{require_protocol:true})){
         return res.status(400).json({error:"Invalid or missing longUrl"});
     }
-    const stUrl=short();
-    const newUrl=new Url({shortUrl:stUrl,longUrl:url,owner:user,expiresIn:60});
+    let stUrl;
+    let exUrl;
+    do{
+        stUrl=short();
+        exUrl= await Url.findOne({shortUrl:stUrl});
+    }while(exUrl);
+    const expiresInMinutes=(expiresAt)?expiresAt:60;
+    const expiresIn=new Date(Date.now()+expiresInMinutes*60*1000);
+    const newUrl=new Url({shortUrl:stUrl,longUrl:url,owner:user,expiresIn});
     await newUrl.save();
     res.status(201).send({shortUrl:stUrl,url});
     console.log("Created a newShortURL");
