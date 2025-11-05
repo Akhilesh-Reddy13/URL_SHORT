@@ -63,7 +63,7 @@ router.get('/:shortUrl',async (req,res)=>{
     if(lgUrl){
         let parser = new UAParser(req.headers['user-agent']);
         let ua=parser.getResult();
-        await Url.updateMany({shortUrl},{$inc:{clicks:1},$set:{lastAccessed:new Date},$push:{browsers:ua.browser.name}});
+        await Url.updateMany({shortUrl},{$inc:{clicks:1},$push:{browsers:ua.browser.name,lastAccessed:new Date}});
         return res.redirect(lgUrl.longUrl);
     }
     else{
@@ -113,6 +113,31 @@ router.get('/analytics/:shortUrl',authenticateToken,async(req,res)=>{
         return res.status(500).json({message:"Internal Server Error"});
     }
 })
+
+router.get('/users/urls',authenticateToken, async(req,res)=>{
+    try{
+    const user=await User.findOne({username:req.user.username});
+    if(!user){
+        return res.status(404).json({message:"User not found"});
+    }
+    let urlList=[];
+    const userUrlArray=user.addedUrl;
+    for(const element of userUrlArray){
+        const url= await Url.findOne({_id:element});
+        if(url){
+            urlList.push(url);
+        }
+    }
+    if(urlList.length===0) return res.status(200).json({message:"Nothing yet to see"});
+    return res.status(200).json({Urls:urlList});
+    }
+    catch(error){
+        console.log("Error while accessing user's urls");
+        console.log(error.stack);
+        return res.status(500).json({message:"Internal server error"});
+    }
+})
+
 router.post('/create',authenticateToken, async (req,res)=>{
     try{
     const user=await User.findOne({username:req.user.username});
