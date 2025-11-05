@@ -120,16 +120,13 @@ router.get('/users/urls',authenticateToken, async(req,res)=>{
     if(!user){
         return res.status(404).json({message:"User not found"});
     }
-    let urlList=[];
     const userUrlArray=user.addedUrl;
-    for(const element of userUrlArray){
-        const url= await Url.findOne({_id:element});
-        if(url){
-            urlList.push(url);
-        }
-    }
-    if(urlList.length===0) return res.status(200).json({message:"Nothing yet to see"});
-    return res.status(200).json({Urls:urlList});
+    const urlList=await Promise.all(
+        userUrlArray.map(element=>Url.findOne({_id:element}))
+    );
+    const validUrls= urlList.filter(url=>url!==null);
+    if(validUrls.length===0) return res.status(200).json({message:"Nothing yet to see"});
+    return res.status(200).json({Urls:validUrls});
     }
     catch(error){
         console.log("Error while accessing user's urls");
