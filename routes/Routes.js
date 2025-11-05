@@ -8,6 +8,8 @@ import dotenv from "dotenv";
 import {UAParser} from "ua-parser-js";
 import { authenticateToken } from "../middleware/auth.js";
 import validator from "validator";
+import { json } from "stream/consumers";
+import { url } from "inspector";
 
 const router=express.Router();
 
@@ -31,6 +33,7 @@ router.post('/users/signup',async(req,res)=>{
         }}
         catch(error){
             console.log(error);
+            console.log(error.stack);
             res.status(500).json({message:"Internal Server Error"});
         }
 });
@@ -48,6 +51,7 @@ router.post('/users/login',async(req,res)=>{
         }
     } catch (error) {
         console.error('Login error:', error);
+        console.log(error.stack);
         return res.status(500).json({message:'Internal server error'});
     }
 });
@@ -68,11 +72,47 @@ router.get('/:shortUrl',async (req,res)=>{
     }
     catch(error){
         console.log("Error while getting the original data");
+        console.log(error.stack);
         return res.status(500).json({message:"Internal Server Error"});
     }
 
 })
 
+router.get('/analytics/:shortUrl',authenticateToken,async(req,res)=>{
+    try{
+    const user=await User.findOne({username:req.user.username});
+    if(!user){
+        return res.status(404).json({message:"User not found"});
+    }
+    const shortUrl=req.params.shortUrl;
+    const urlUser= await Url.findOne({shortUrl});
+    if(!urlUser){
+        return res.status(404).json({message:"Url not found"});
+    }
+    if(!urlUser.owner){
+        return res.status(404).json({message:"Owner not found"});
+    }
+    if(urlUser.owner.toString() !== user._id.toString()){
+        return res.status(403).json({message:"Not able to access it"});
+    }
+    const analytic={
+        shortURL:shortUrl,
+        longURL:urlUser.longUrl,
+        clicks:urlUser.clicks,
+        owner:urlUser.owner,
+        lastAccessed:urlUser.lastAccessed,
+        expiresAt:urlUser.expiresIn,
+        createdAt:urlUser.createdAt,
+        browsers:urlUser.browsers
+    };
+    return res.status(200).json({analyt:analytic});
+    }
+    catch(error){
+        console.log("Error while accessing analytics");
+        console.log(error.stack);
+        return res.status(500).json({message:"Internal Server Error"});
+    }
+})
 router.post('/create',authenticateToken, async (req,res)=>{
     try{
     const user=await User.findOne({username:req.user.username});
@@ -91,15 +131,17 @@ router.post('/create',authenticateToken, async (req,res)=>{
     }while(exUrl);
     const expiresInMinutes=(expiresAt)?expiresAt:60;
     const expiresIn=new Date(Date.now()+expiresInMinutes*60*1000);
-    const newUrl=new Url({shortUrl:stUrl,longUrl:url,owner:user,expiresIn});
+    const newUrl=new Url({shortUrl:stUrl,longUrl:url,owner:user._id,expiresIn});
     await newUrl.save();
+    await User.updateOne({_id:user._id},{$push:{addedUrl:newUrl._id}});
     res.status(201).send({shortUrl:stUrl,url});
     console.log("Created a newShortURL");
     }
     catch(error){
         console.log("Error while shortening url");
+        console.log(error.stack);
          return res.status(500).json({message:"Internal Server Error"});
     }
-})
+});
 
 export default router;

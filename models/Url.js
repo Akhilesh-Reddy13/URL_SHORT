@@ -6,7 +6,7 @@ const urlSchema=new mongoose.Schema({
     longUrl: {type:String,required:true},
     clicks: {type:Number,default:0},
     createdAt: {type:Date, default: Date.now},
-    owner: {type:String,required:true},
+    owner: {type:mongoose.Schema.Types.ObjectId, ref:'User', required:true},
     lastAccessed: [{type:Date}],
     expiresIn: {type:Date,required:true,index:{expires:0}},
     browsers:[{type:String}]
