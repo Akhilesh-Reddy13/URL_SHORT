@@ -10,6 +10,7 @@ import { authenticateToken } from "../middleware/auth.js";
 import validator from "validator";
 import { json } from "stream/consumers";
 import { url } from "inspector";
+import { access } from "fs";
 
 const router=express.Router();
 
@@ -44,6 +45,8 @@ router.post('/users/login',async(req,res)=>{
         const user=await User.findOne({username});
         if(user && await bcrypt.compare(password,user.password)){
             const token=jwt.sign({username,role:'user'},secretKey,{expiresIn:'1h'});
+            const refreshToken=jwt.sign({username,role:'user'},secretKey,{expiresIn:'7d'});
+            await User.updateOne({_id:user._id},{refreshToken});
             return res.json({message:'Logged in succesfully',token});
         }
         else{
@@ -55,6 +58,27 @@ router.post('/users/login',async(req,res)=>{
         return res.status(500).json({message:'Internal server error'});
     }
 });
+
+router.post("/users/refresh",async(req,res)=>{
+    try{
+        const {refreshToken}=req.body;
+        if(!refreshToken){
+            return res.status(401).json({message:"RefreshToken is required"});
+        }
+        const decoded=jwt.verify(refreshToken,secretKey);
+        const user=await User.findOne({username:decoded.username});
+        if(!user || user.refreshToken!==refreshToken){
+            return res.status(403).json({message:'Invalid refresh token'})
+        }
+        const newToken= jwt.sign({username:decoded.username,role:'user'},secretKey,{expiresIn:'1hr'});
+        return res.json({accessToken:newToken});
+    }
+    catch(error){
+        console.log("Error while updating refresh token");
+        console.log(error.stack);
+        return res.status(403).json({message:"Invalid refresh token"});
+    }
+})
 
 router.get('/:shortUrl',async (req,res)=>{
     try{
